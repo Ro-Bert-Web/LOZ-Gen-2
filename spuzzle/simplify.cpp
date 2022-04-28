@@ -28,7 +28,7 @@ void simplify(KGraph &graph, int simplicity) {
             }
         }
 
-        // Pick two rooms to simplify.
+        // Pick two rooms to simplify. TODO
         int a = -1, b = -1, comparison = 0;
         for (set<int>::iterator it = unfinished.begin(); it != unfinished.end(); it++) {
             set<int>::iterator jt = it;
@@ -65,6 +65,7 @@ void simplify(KGraph &graph, int simplicity) {
             }
         }
 
+        // Simplify the pair of rooms
         if (a == -1 || b == -1) {
             comparison = 1 << graph.mapSize;
             for (set<int>::iterator it = unfinished.begin(); it != unfinished.end(); it++) {
@@ -119,11 +120,20 @@ void simplifyPair(KGraph &graph, int iA0, int iA1, int iB0, int iB1) {
     KMap &m = graph.get(iAM, iBM);
 
 
-    // Generate new passages
-    a0 = graph.fromAtoB(0, iA0).exact() & !A0.exact();
-    a1 = graph.fromAtoB(0, iA1).exact() & !A1.exact();
-    b0 = graph.fromAtoB(0, iB0).exact() & !B0.exact();
-    b1 = graph.fromAtoB(0, iB1).exact() & !B1.exact();
+    /* Generate new passages TODO */
+    // Clear out passages temporarily
+    a0 = KMap{graph.mapSize, F};
+    a1 = KMap{graph.mapSize, F};
+    b0 = KMap{graph.mapSize, F};
+    b1 = KMap{graph.mapSize, F};
+    m = KMap{graph.mapSize, F};
+
+    // Set branches to T, X, or F depending on accessibility now
+    // "If A0 was specifically open and now might not be open, open a0"
+    a0 = A0.exact() & (!graph.fromAtoB(0, iA0)).maybe();
+    a1 = A1.exact() & (!graph.fromAtoB(0, iA1)).maybe();
+    b0 = B0.exact() & (!graph.fromAtoB(0, iB0)).maybe();
+    b1 = B1.exact() & (!graph.fromAtoB(0, iB1)).maybe();
 }
 
 
