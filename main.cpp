@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstdlib>
+#include <string>
 #include "spuzzle/spuzzle.hpp"
 
 using namespace std;
@@ -13,6 +14,12 @@ int main(int argc, char **argv) {
     int simplicity = 2;
 
     if (argc > 1) {
+        string arg = argv[1];
+        if (arg.compare("--help") == 0) {
+            cout << "Usage: ./a.out numSwitches numKeys numCataclysms pressure[0-100] simplicity" << endl;
+            exit(EXIT_SUCCESS);
+        }
+
         numSwitches = atoi(argv[1]);
         if (argc > 2) {
             numKeys = atoi(argv[2]);

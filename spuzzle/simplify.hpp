@@ -4,7 +4,7 @@
 #include "../kgraph/kgraph.hpp"
 
 void simplify(KGraph&, int);
-void simplifyPair(KGraph&, int, int, int, int);
-void breakPair(KGraph&, int, int);
+void simplifyPair(KGraph&, int, int);
+void breakPair(KGraph&, int);
 
 #endif

@@ -32,7 +32,7 @@ void buildSequence(KGraph &graph, int numSwitches, int numKeys, int numCataclysm
 
     // Generate solution path
     for (int i = 0; i < numKeys + numCataclysms; i++) {
-        for (int j = 0; j < (2 * numSwitches - 1) * pressure / 100; j++) {
+        for (int j = 0; j < (2 * numSwitches - 1) * pressure / 100 || j < 1; j++) {
             // Generate random permutation of all the switches
             list<int> trials = nperm(rand() % fact(numSwitches), numSwitches);
 
@@ -53,7 +53,7 @@ void buildSequence(KGraph &graph, int numSwitches, int numKeys, int numCataclysm
         }
     }
 
-    for (int i = 0; i < (2 * numSwitches - 1) * pressure / 100; i++) {
+    for (int i = 0; i < (2 * numSwitches - 1) * pressure / 100 || i < 1; i++) {
         // Generate random permutation of all the switches
         list<int> trials = nperm(rand() % fact(numSwitches), numSwitches);
 
