@@ -285,9 +285,9 @@ KMap KMap::maybe() const {
 
 KMap KMap::resolve() const {
     KMap rslt = *this;
-    for (int i = 0; i < rslt.cells.size(); i++)
-        if (rslt.cells[i] == X)
-            rslt.cells[i] = F;
+    list<KBox> sol = solve();
+    for (list<KBox>::iterator it = sol.begin(); it != sol.end(); it++)
+        rslt |= (KMap)*it;
     return rslt;
 }
 

@@ -23,16 +23,19 @@ void simplify(KGraph &graph, int simplicity) {
             if (map.empty()) {
                 map = KMap{graph.mapSize, F};
                 continue;
-            /*} else if (map.solve().size() == 1) {
-                map.resolve();
-                continue;*/
             } else {
                 unfinished.insert(j);
             }
         }
 
         // Pick two rooms to simplify. TODO
-        int a = -1, b = -1, comparison = 0;
+        int a = -1, b = -1, comparison = 1 << graph.mapSize;
+        /*for (set<int>::iterator it = unfinished.begin(); it != unfinished.end(); it++) {
+            set<int>::iterator jt = it;
+            for (jt++; jt != unfinished.end(); jt++) {
+            }
+        }*/
+
         for (set<int>::iterator it = unfinished.begin(); it != unfinished.end(); it++) {
             set<int>::iterator jt = it;
             for (jt++; jt != unfinished.end(); jt++) {
@@ -40,26 +43,14 @@ void simplify(KGraph &graph, int simplicity) {
                     KMap ai = graph.get(0, *it);
                     KMap bi = graph.get(0, *jt);
 
-                    KMap aDiff = ai & !(KMap)bi.boundingBox();
-                    KMap bDiff = bi & !(KMap)ai.boundingBox();
+                    if (ai.solve().size() == 1 && bi.solve().size() == 1)
+                        continue;
 
-                    int aDiffTerm;
-                    int bDiffTerm;
+                    KMap aDiff = ai & !bi.resolve();
+                    KMap bDiff = bi & !ai.resolve();
 
-                    if (aDiff.empty()) {
-                        aDiffTerm = 0;
-                    } else {
-                        aDiffTerm = aDiff.boundingBox().termSize();
-                    }
-
-                    if (bDiff.empty()) {
-                        bDiffTerm = 0;
-                    } else {
-                        bDiffTerm = bDiff.boundingBox().termSize();
-                    }
-
-                    int comp = aDiffTerm + bDiffTerm;
-                    if (comp > comparison) {
+                    int comp = aDiff.solve().size() + bDiff.solve().size();
+                    if (comp < comparison) {
                         a = *it;
                         b = *jt;
                         comparison = comp;
@@ -97,6 +88,7 @@ void simplify(KGraph &graph, int simplicity) {
 
 void simplifyPair(KGraph &graph, int iA, int iB) {
     cout << "Simplifying Pair " << iA << " " << iB << endl;
+
     if (iA == iB) {
         cerr << "Cannot simplify a branch between the same node" << endl;
         exit(EXIT_FAILURE);
@@ -185,39 +177,76 @@ void simplifyPair(KGraph &graph, int iA, int iB) {
     //  in both (doesn't matter)
     //  in neither (pick the one that would make them smallest [somehow])
 
-    // In one but not the other
-    KMap crit = (aMask | bMask) & a0.resolve() & !b0.resolve();
-    a0 |= crit;
-    b0 &= !(crit & KMap{graph.mapSize, X});
+    while (true) {
+        // In one but not the other
+        KMap crit = (aMask | bMask) & a0.resolve() & !b0.resolve();
+        a0 |= crit;
+        b0 &= !(crit & KMap{graph.mapSize, X});
 
-    crit = (aMask | bMask) & b0.resolve() & !a0.resolve();
-    b0 |= crit;
-    a0 &= !(crit & KMap{graph.mapSize, X});
+        crit = (aMask | bMask) & b0.resolve() & !a0.resolve();
+        b0 |= crit;
+        a0 &= !(crit & KMap{graph.mapSize, X});
 
-    aMask &= !a0.exact() | KMap{graph.mapSize, X};
-    bMask &= !b0.exact() | KMap{graph.mapSize, X};
+        aMask &= !a0.exact() | KMap{graph.mapSize, X};
+        bMask &= !b0.exact() | KMap{graph.mapSize, X};
 
-    // In both
-    crit = (aMask | bMask) & a0.resolve() & b0.resolve();
-    // Encourage passthrough logic (if a0 requires it but b0 can have it, use b0)
-    a0 |= crit & bMask.exact() & !aMask.exact();
-    b0 |= crit & aMask.exact() & !bMask.exact();
+        // In both
+        crit = (aMask | bMask) & a0.resolve() & b0.resolve();
+        // Encourage passthrough logic (if a0 requires it but b0 can have it, use b0)
+        a0 |= crit & bMask.exact() & !aMask.exact();
+        b0 |= crit & aMask.exact() & !bMask.exact();
+        // Both a0 and b0 require it, pick one at random by generating a random map to assign them
+        // T -> a0; F -> b0; X -> a0,b0
+        KMap randMap{graph.mapSize};
+        for (int i = 0; i < (1 << graph.mapSize); i++) {
+            switch(rand() % 3) {
+                case 0:
+                    randMap[i] = X;
+                    break;
+                case 1:
+                    randMap[i] = T;
+                    break;
+                case 2:
+                    randMap[i] = F;
+                    break;
+            }
+        }
+        a0 |= crit & randMap.maybe();
+        b0 |= crit & (!randMap).maybe();
 
-    aMask &= !a0.exact() | KMap{graph.mapSize, X};
-    bMask &= !b0.exact() | KMap{graph.mapSize, X};
+        aMask &= !a0.exact() | KMap{graph.mapSize, X};
+        bMask &= !b0.exact() | KMap{graph.mapSize, X};
 
 
+        // Pick one of the remaining spots and assign it to the smallest solution
+        if ((aMask & bMask).empty()) {
+            break;
+        } else {
+            crit = aMask & bMask;
+            for (int i = 0; i < (1 << graph.mapSize); i++) {
+                if (crit[i] == T) {
+                    if (a0.solve().size() < b0.solve().size()) {
+                        a0 |= KMap{KState{graph.mapSize, i}};
+                    } else {
+                        b0 |= KMap{KState{graph.mapSize, i}};
+                    }
+                    aMask &= !a0.exact() | KMap{graph.mapSize, X};
+                    bMask &= !b0.exact() | KMap{graph.mapSize, X};
+                    break;
+                }
+            }
+        }
+    }
+
+
+    // Adds all the remaining values into a0
     a0 |= aMask.exact();
     b0 |= bMask.exact();
 
-
-    // set a0, b0, and m
-    // Goals:
-    //  get a1, b1, and m to be solid boxes
-    //  minimize the complexity of a0 and b0
-    //  what is complexity?
-    //   amount of terms in solution? ***
-    //   size of bounding box?
+    if (a0.empty())
+        a0 = KMap{graph.mapSize, F};
+    if (b0.empty())
+        b0 = KMap{graph.mapSize, F};
 }
 
 

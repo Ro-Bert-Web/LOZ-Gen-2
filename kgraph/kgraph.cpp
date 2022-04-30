@@ -169,7 +169,7 @@ void KGraph::print(KState state, int room) {
     for (int i = 0; i < size(); i++) {
         for (int j = i + 1; j < size(); j++) {
             KMap map = get(i, j);
-            if (!(map.empty())) {
+            if (!(map.zero())) {
                 list<KBox> boxes = map.solve();
                 string label;
                 for (list<KBox>::iterator it = boxes.begin(); it != boxes.end(); it++)
